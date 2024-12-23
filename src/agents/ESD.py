@@ -16,6 +16,7 @@ import ml_collections
 from . import iql
 from src.special_networks import Representation, HierarchicalActorCritic, RelativeRepresentation, MonolithicVF,MonolithicVF_target
 from diffusion import utils,q_sample,noise_to_x0,x0_to_noise,get_posterior_mean_variance
+from diffusion.utils import q_sample,noise_to_x0,x0_to_noise,get_posterior_mean_variance
 import time
 import os
 import flax
