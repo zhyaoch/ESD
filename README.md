@@ -34,7 +34,9 @@ CUDA_VISIBLE_DEVICES=0 python train.py --run_group Diffusion --seed 0 --env_name
 # ESD on calvin
 CUDA_VISIBLE_DEVICES=0 python train.py --run_group Diffusion --seed 0 --env_name calvin --pretrain_steps 1000002 --eval_interval 100000 --save_interval 250000 --p_currgoal 0.2 --p_trajgoal 0.5 --p_randomgoal 0.3 --discount 0.99 --temperature 1 --high_temperature 3 --pretrain_expectile 0.7 --geom_sample 1 --use_layer_norm 1 --value_hidden_dim 512 --value_num_layers 3 --batch_size 1024 --use_rep 1 --policy_train_rep 0 --rep_dim 10 --rep_type concat --algo_name ESD --use_waypoints 1 --way_steps 25 --high_p_randomgoal 0.3
 ```
+## ✉️ Contact
+For any questions, please feel free to email zhangyaocheng2023@ia.ac.cn.
 
-## License
+## 🏷️ License
 
 MIT
