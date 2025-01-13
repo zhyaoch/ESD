@@ -131,7 +131,34 @@ def evaluate_with_trajectories(
                 next_observation, r, terminated ,truncated, info = env.step(action)
                 done = terminated or truncated
             step += 1
-
+            if i >= num_episodes and step % 3 == 0:
+                size = 768
+                if 'antmaze' in env_name:
+                    cur_frame = env.render(mode='rgb_array', width=size, height=size).transpose(2, 0, 1).copy()  #mode='rgb_array', 
+                    if use_waypoints and not config['use_rep'] and ('large' in env_name or 'ultra' in env_name):
+                        def xy_to_pixxy(x, y):
+                            if 'large' in env_name:
+                                pixx = (x / 36) * (0.93 - 0.07) + 0.07
+                                pixy = (y / 24) * (0.21 - 0.79) + 0.79
+                            elif 'ultra' in env_name:
+                                pixx = (x / 52) * (0.955 - 0.05) + 0.05
+                                pixy = (y / 36) * (0.19 - 0.81) + 0.81
+                            return pixx, pixy
+                        # print(f"cur_obs_goal_rep[:2]:{cur_obs_goal_rep[0,:2]}")
+                        # x, y = cur_obs_goal_rep[:2]
+                        x, y = cur_obs_goal_rep[0,:2]
+                        pixx, pixy = xy_to_pixxy(x, y)
+                        cur_frame[0, int((pixy - 0.02) * size):int((pixy + 0.02) * size), int((pixx - 0.02) * size):int((pixx + 0.02) * size)] = 255
+                        cur_frame[1:3, int((pixy - 0.02) * size):int((pixy + 0.02) * size), int((pixx - 0.02) * size):int((pixx + 0.02) * size)] = 0
+                    render.append(cur_frame)
+                elif 'kitchen' in env_name:
+                    render.append(kitchen_render(env, wh=1024).transpose(2, 0, 1))
+                elif 'calvin' in env_name:
+                    cur_frame = env.render(mode='rgb_array',wh=size).transpose(2, 0, 1)
+                    render.append(cur_frame)
+                elif 'humanoidmaze' in env_name or 'scene' in env_name or 'antsoccer' in env_name:
+                    cur_frame = env.render().transpose(2, 0, 1)
+                    render.append(cur_frame)
             transition = dict(
                 observation=observation,
                 next_observation=next_observation,
@@ -147,6 +174,8 @@ def evaluate_with_trajectories(
             info['return'] = sum(trajectory['reward'])
         add_to(stats, flatten(info, parent_key="final"))
         trajectories.append(trajectory)
+        if i >= num_episodes: #zyc
+            renders.append(np.array(render))
 
     for k, v in stats.items():
         stats[k] = np.mean(v)

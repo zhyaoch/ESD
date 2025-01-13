@@ -179,6 +179,27 @@ def main(_):
         dataset = d4rl_utils.get_dataset(env, FLAGS.env_name)
         dataset = dataset.copy({'rewards': dataset['rewards'] - 1.0})
 
+        env.render(mode='rgb_array', width=200, height=200)  #取消  #mode='rgb_array', 
+        if 'large' in FLAGS.env_name:
+            env.viewer.cam.lookat[0] = 18
+            env.viewer.cam.lookat[1] = 12
+            env.viewer.cam.distance = 50
+            env.viewer.cam.elevation = -90
+
+            viz_env, viz_dataset = d4rl_ant.get_env_and_dataset(env_name)
+            viz = ant_diagnostics.Visualizer(env_name, viz_env, viz_dataset, discount=FLAGS.discount)
+            init_state = np.copy(viz_dataset['observations'][0])
+            init_state[:2] = (12.5, 8)
+        elif 'ultra' in FLAGS.env_name:
+            env.viewer.cam.lookat[0] = 26
+            env.viewer.cam.lookat[1] = 18
+            env.viewer.cam.distance = 70
+            env.viewer.cam.elevation = -90
+        else:
+            env.viewer.cam.lookat[0] = 18
+            env.viewer.cam.lookat[1] = 12
+            env.viewer.cam.distance = 50
+            env.viewer.cam.elevation = -90
     elif 'kitchen' in FLAGS.env_name:
         env = d4rl_utils.make_env(FLAGS.env_name)
         dataset = d4rl_utils.get_dataset(env, FLAGS.env_name, filter_terminals=True)
@@ -226,7 +247,7 @@ def main(_):
             dataset[key] = np.concatenate([d[key] for d in ds], axis=0)
         dataset = d4rl_utils.get_dataset(None, FLAGS.env_name, dataset=dataset)
     elif 'humanoidmaze' in FLAGS.env_name or 'scene' in FLAGS.env_name  or 'antsoccer' in FLAGS.env_name:  
-        env, dataset, val_dataset = ogbench.make_env_and_datasets(FLAGS.env_name)
+        env, dataset, val_dataset = ogbench.make_env_and_datasets(FLAGS.env_name,width=768, height=768)
         dataset = d4rl_utils.get_dataset(None, FLAGS.env_name, dataset=dataset)
         dataset = dataset.copy({'observations': dataset['observations'], 'next_observations': dataset['next_observations']})
     else:
@@ -302,13 +323,30 @@ def main(_):
                 action_dim=action_dim,observation_dim=high_action_dim,seed=key,pretrain_dataset=pretrain_dataset,
             )
             eval_metrics = {f'evaluation/{k}': v for k, v in eval_info.items()}
-
+            if FLAGS.num_video_episodes > 0: #zyc
+                    video = record_video('Video', i, renders=renders,n_cols=1)
+                    eval_metrics['video'] = video
             traj_metrics = get_traj_v(agent, example_trajectory)
             value_viz = viz_utils.make_visual_no_image(
                 traj_metrics,
                 [partial(viz_utils.visualize_metric, metric_name=k) for k in traj_metrics.keys()]
             )
             eval_metrics['value_traj_viz'] = wandb.Image(value_viz)
+
+            if 'antmaze' in FLAGS.env_name and 'large' in FLAGS.env_name and FLAGS.env_name.startswith('antmaze'):
+                traj_image = d4rl_ant.trajectory_image(viz_env, viz_dataset, trajs)
+                eval_metrics['trajectories'] = wandb.Image(traj_image)
+
+                new_metrics_dist = viz.get_distance_metrics(trajs)
+                eval_metrics.update({
+                    f'debugging/{k}': v for k, v in new_metrics_dist.items()})
+
+                image_v = d4rl_ant.gcvalue_image(
+                    viz_env,
+                    viz_dataset,
+                    partial(get_v, agent),
+                )
+                eval_metrics['v'] = wandb.Image(image_v)
 
             wandb.log(eval_metrics, step=i)
             eval_logger.log(eval_metrics, step=i)
