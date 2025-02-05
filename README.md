@@ -19,6 +19,9 @@ cd calvin
 ./install.sh
 ```
 
+The code relies on [wandb](https://wandb.ai/site/) for logging. Please log in your wandb account following this [document](https://docs.wandb.ai/ref/cli/wandb-login/) before running any experiments.
+
+
 ## Examples
 
 ```
